@@ -24,20 +24,6 @@ def main_recognize_and_solve_board():
     d = json.load(f)['1440x2880']
   assert d is not None
 
-  def to_side_length_set(bounds):
-    return { x[1] - x[0] + 1 for x in bounds }
-
-  # Build reverse map from side length of a blank cell to size (# of cells in row or col)
-  side_length_to_size = {}
-  for size_raw, v in d.items():
-    size = int(RE_RAW_SIZE.match(size_raw).group(1))
-    row_bounds = to_side_length_set(v['row_bounds'])
-    col_bounds = to_side_length_set(v['col_bounds'])
-    all_bounds = set.union(row_bounds, col_bounds)
-    for x in all_bounds:
-      assert x not in side_length_to_size, 'Side length is ambiguous.'
-      side_length_to_size[x] = size
-
   # TODO: this is just quick and dirty and contains tons of duplicated codes.
   fp_img = tempfile.NamedTemporaryFile(delete=False,suffix='.png')
   subprocess.run(['adb', 'exec-out', 'screencap', '-p'], stdout=fp_img)

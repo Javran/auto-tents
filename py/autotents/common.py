@@ -29,15 +29,20 @@ def private_path(*p):
   return os.path.join(PRIVATE_BASE, *p)
 
 
-def load_sample(size,screen_dim=PRESET_SCREEN_DIM):
-  """Loads screenshot sample of a specific size."""
+def load_sample_by_name(name,screen_dim=PRESET_SCREEN_DIM):
+  """Loads screenshot sample by file name."""
   h, w = screen_dim
-  img = cv2.imread(private_path('samples', f'{h}x{w}', f'sample-{size}x{size}.png'))
+  img = cv2.imread(private_path('samples', f'{h}x{w}', name))
   assert img is not None, f'Loaded image is empty, the file might not exist or might be ill-formed.'
   img_h, img_w, _ = img.shape
   assert (img_h, img_w) == screen_dim, \
     f'Image shape mismatched, expected {h}x{w}, got {img_h}x{img_w}.'
   return img
+
+
+def load_sample(size,screen_dim=PRESET_SCREEN_DIM):
+  """Loads screenshot sample of a specific size."""
+  return load_sample_by_name(f'sample-{size}x{size}.png')
 
 
 def find_exact_color(img, color):

@@ -380,33 +380,6 @@ def main_tagging(dry_run=True):
   print(f'Visited {visit_count} samples and {good_count} of them found good matches.')
 
 
-
-
-RE_RAW_SIZE = re.compile(r'^(\d+)x\1$')
-
-
-def find_board_size(side_length_to_size, img):
-  h, w, _ = img.shape
-  result = cv2.inRange(img, color_blank, color_blank)
-  mask = np.zeros((h+2,w+2), dtype=np.uint8)
-  # now we just need one empty cell for this to work,
-  # we can just search inside bounding rect and
-  # find the last empty cell so that we don't need to
-  # skip first box and then look at many filler lines.
-  r_x, r_y, r_w, r_h = cv2.boundingRect(result)
-  for r in reversed(range(r_y,r_y+r_h)):
-    for c in reversed(range(r_x,r_x+r_w)):
-      if (result[r,c] != 0):
-        x,y = c,r
-        retval, result, _, rect = cv2.floodFill(result, mask, (x,y), 0)
-        _, _, rect_w, _ = rect
-        if rect_w in side_length_to_size:
-          return side_length_to_size[rect_w]
-        else:
-          return None
-
-
-
 # Here we focus on two numbers:
 # - what is the worst match inside the same tag (in-tag min),
 #   this measures how "spreaded" are those samples.
