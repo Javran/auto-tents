@@ -20,6 +20,7 @@ import io
 import tempfile
 import time
 import random
+import autotents.common
 
 # We use CCOEFF here as we do want some penalty on mismatched bits
 # so that result is spreaded over a wider range so we have finer control using threshold.
@@ -131,7 +132,7 @@ def subplot_color(num, img, title):
 
 def main_all_samples():
   pat_orig = cv2.imread('../sample/tree-sample.png')
-  for i in range(5,22+1):
+  for i in autotents.common.PUZZLE_SIZES:
     img = load_sample(i)
     target_width = optimize_pattern_width(pat_orig, img)
     print(f'{i}: {target_width}')

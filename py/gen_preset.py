@@ -9,7 +9,7 @@ import numpy
 import autotents.common
 
 
-def resolve_stat(d, size, threshold = 3):
+def resolve_stat(d, size, threshold=3):
   """
     Given a dict d and an expected # of elements,
     derive a list of row values (or column values) from it.
@@ -48,8 +48,10 @@ def resolve_stat(d, size, threshold = 3):
 
 def find_cell_bounds(img, size=None):
   h, w, _ = img.shape
-  result = autotents.common.find_exact_color(img,
-                                             autotents.common.COLOR_CELL_BLANK)
+  result = autotents.common.find_exact_color(
+    img,
+    autotents.common.COLOR_CELL_BLANK
+  )
 
   mk_stat = lambda: collections.defaultdict(lambda: 0)
 
@@ -97,34 +99,32 @@ def find_cell_bounds(img, size=None):
   return row_bounds, col_bounds
 
 
-# TODO: Given that most of the processing time is spent on doing floodFill to figure out cell bounds,
+# Given that most of the processing time is spent on doing floodFill to figure out cell bounds,
 # it makes sense that we have this info pre-processed. In order to achieve so, we must extract size of the board.
 # Note that despite regular puzzle shows size info (size x size), daily puzzles do not.
 # one potential alternative is to examine an empty cell of the board and see if it's possible to establish size this way
 # (assuming that all puzzles are squares)
 def main_generate_preset():
-  # TODO: plan to serialize to json file.
   # schema:
   # top level is an Object keyed by screen width and height i.e. "1440x2880"
   # then values are Object keyed by size e.g. "16x16", which is then keyed by "row_bounds" and "col_bounds",
-  # which are Arrays whose elements are Array of two elements [lo, hi].
+  # which are Arrays whose elements are Arrays of two elements [lo, hi].
   # e.g.:
   # {
-  #   "1440x2880": {"16x16": {"row_bounds": [[a,b], [c,d], ...], "col_bounds": [[a,b], [c,d], ...]}}
+  #   "2880x1440": {"16x16": {"row_bounds": [[a,b], [c,d], ...], "col_bounds": [[a,b], [c,d], ...]}}
   # }
+  h, w = autotents.common.PRESET_SCREEN_DIM
   cell_bounds_mapping = {}
-  for size in range(6,22+1):
+  for size in autotents.common.PUZZLE_SIZES:
     print(f'Processing {size}x{size} ...')
     img = autotents.common.load_sample(size)
-    h, w, _ = img.shape
-    assert (h,w) == (2880,1440)
     cell_bounds = find_cell_bounds(img, size)
     row_bounds, col_bounds = cell_bounds
     cell_bounds_mapping[f'{size}x{size}'] = {
       'row_bounds': row_bounds,
       'col_bounds': col_bounds,
     }
-  full = {'1440x2880': cell_bounds_mapping}
+  full = {f'{h}x{w}': cell_bounds_mapping}
   print(json.dumps(full,sort_keys=True,separators=(',', ':')))
 
 
