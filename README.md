@@ -26,6 +26,8 @@ Here are few steps to have a working program, if my memory serves.
   This file allows us to quickly find cell positions
   for all different sizes of the puzzle board.
 
+  For this you just need to run `cd py; ./gen_preset.py`.
+
 - Collect digit samples.
 
   We'll need to visit through those samples again

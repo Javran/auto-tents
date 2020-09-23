@@ -8,6 +8,7 @@ import cv2
 import numpy
 
 import autotents.common
+import autotents.preset
 
 
 def resolve_stat(d, size, threshold=3):
@@ -137,8 +138,7 @@ def main_generate_preset():
   print('Processing samples in parallel ...')
   with multiprocessing.Pool() as p:
     cell_bounds_mapping = dict(p.map(_generate_preset_for_size, autotents.common.PUZZLE_SIZES))
-  full = {f'{h}x{w}': cell_bounds_mapping}
-  print(json.dumps(full,sort_keys=True,separators=(',', ':')))
+  autotents.preset.preset.register(f'{h}x{w}', cell_bounds_mapping)
 
 
 if __name__ == '__main__':

@@ -33,7 +33,7 @@ def load_sample(size,screen_dim=PRESET_SCREEN_DIM):
   """Loads screenshot sample of a specific size."""
   h, w = screen_dim
   img = cv2.imread(private_path('samples', f'{h}x{w}', f'sample-{size}x{size}.png'))
-  assert img, f'Loaded image is empty, the file might not exist or might be ill-formed.'
+  assert img is not None, f'Loaded image is empty, the file might not exist or might be ill-formed.'
   img_h, img_w, _ = img.shape
   assert (img_h, img_w) == screen_dim, \
     f'Image shape mismatched, expected {h}x{w}, got {img_h}x{img_w}.'
