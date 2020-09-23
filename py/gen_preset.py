@@ -101,7 +101,8 @@ def find_cell_bounds(img, size=None):
   col_bounds = make_bounds(col_begins_stat, col_ends_stat)
 
   if size is None:
-    assert len(row_bounds) == len(col_bounds), f'Mismatched bound length {len(row_bounds)} vs {len(col_bounds)}.'
+    assert len(row_bounds) == len(col_bounds), \
+      f'Mismatched bound length {len(row_bounds)} vs {len(col_bounds)}.'
 
   return row_bounds, col_bounds
 
@@ -120,7 +121,8 @@ def _generate_preset_for_size(size):
 # Given that most of the processing time is spent on doing floodFill to figure out cell bounds,
 # it makes sense that we have this info pre-processed. In order to achieve so, we must extract size of the board.
 # Note that despite regular puzzle shows size info (size x size), daily puzzles do not.
-# one potential alternative is to examine an empty cell of the board and see if it's possible to establish size this way
+# Fortunately all puzzle of different sizes use cells of different side length as well,
+# therefore once we know the side length of an empty cell, we can map it back to puzzle size.
 # (assuming that all puzzles are squares)
 def main_generate_preset():
   # schema:
