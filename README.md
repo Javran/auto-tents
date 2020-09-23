@@ -18,6 +18,8 @@ Here are few steps to have a working program, if my memory serves.
   with naming pattern `sample-{x}-{x}.py` where `{x}` is
   the size of the puzzle (a number from `6` to `22`).
 
+  To take phone screenshots, use `adb exec-out screencap -p > sample-{size}x{size}.png`.
+
 - Generate `private/preset.json`.
 
   This file allows us to quickly find cell positions
