@@ -73,6 +73,12 @@ def find_cell_bounds(img, size=None):
         retval, result, _, rect = cv2.floodFill(result, mask, (x,y), 0)
         rect_x, rect_y, rect_w, rect_h = rect
 
+        # We are getting some 1-pixel noise on 5x5 puzzles,
+        # in order to eliminate those, we ignore detected rectangles
+        # if it is too small (in this case, 5 pixels in width or height)
+        if rect_w <= 5 or rect_h <= 5:
+          continue
+
         if not first_skipped:
           first_skipped = True
           continue
