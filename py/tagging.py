@@ -14,9 +14,13 @@ import functools
 import os
 import re
 import sys
+import uuid
+
+import cv2
 
 import autotents.common
 import autotents.preset
+import autotents.digits
 
 
 _SAMPLE_FILE_PATTERN = re.compile(r'^.*\.png$', re.IGNORECASE)
@@ -48,64 +52,101 @@ def get_all_samples(screen_dim):
   return sorted(retd.items(), key=lambda x: x[0])
 
 
+def extract_digits(img, cell_bounds):
+  h, w, _ = img.shape
+  row_bounds, col_bounds = cell_bounds
+  max_cell_side = max(map(lambda x: x[1] - x[0] + 1, row_bounds + col_bounds))
+  def extract_digit(row,col):
+    return img[row:row+max_cell_side-1,col:col+max_cell_side-1]
+
+  # Suppose first two cells are A and B, we can then find a cell C if we extend
+  # difference between A and B but in the other direction.
+  # A - (B - A) = 2A - B
+
+  digit_row_start = 2 * row_bounds[0][0] - row_bounds[1][0]
+  # col could be negative for 5x5 case.
+  digit_col_start = max(0, 2 * col_bounds[0][0] - col_bounds[1][0])
+
+  # digits accompanying every row.
+  row_digits = [
+    extract_digit(row_lo,digit_col_start)
+    for row_lo, _ in row_bounds
+  ]
+  # same but for columns
+  col_digits = [
+    extract_digit(digit_row_start,col_lo)
+    for col_lo, _ in col_bounds
+  ]
+  return row_digits, col_digits
+
+
+def crop_digit_cell(img):
+  result = autotents.common.find_exact_color(img, autotents.common.COLOR_DIGIT_UNSAT)
+  (x,y,w,h) = cv2.boundingRect(result)
+  if w == 0 or h == 0:
+    return None
+  return result[y:y+h,x:x+w]
+
+
 def main_tagging(dry_run=True):
-  tagged_samples = {} # load_samples()
+  tagged_samples = autotents.digits.manager.data
   sample_count = functools.reduce(lambda acc, l: acc + len(l), tagged_samples.values(), 0)
   print(f'Loaded {len(tagged_samples)} tags, {sample_count} tagged samples in total.')
+
+  screen_dim = autotents.common.PRESET_SCREEN_DIM
+  scr_h, scr_w = screen_dim
 
   # limit the # of samples stored to disk per function call.
   # for now this is effectively not doing anything but we want to avoid
   # running into a situation that saves too many files at once.
-  store_quota = 100
+  store_quota = 40
   visit_count = 0
   good_count = 0
+  store_path = autotents.common.private_path('digits')
+  if not os.path.exists(store_path):
+    os.makedirs(store_path)
 
-  for size, samples in get_all_samples(autotents.common.PRESET_SCREEN_DIM):
+  for size, samples in get_all_samples(screen_dim):
     if store_quota <= 0:
       break
     print(f'Working on size {size} ...')
+    cell_bounds = autotents.preset.preset.getCellBounds(size, screen_dim)
     for fname, img in samples:
-      print(f'Processing {fname} ...')
-
-
-def main_tagging_todo():
-
-  for size in range(6,22+1):
-    if store_quota <= 0:
-      break
-    print(f'Processing image sample of size {size} ...')
-    img = load_sample(size)
-    h, w, _ = img.shape
-    cell_bounds = find_cell_bounds(img, size)
-    row_digits, col_digits = extract_digits(img, cell_bounds)
-    for digit_img in row_digits + col_digits:
-      digit_img_cropped = crop_digit_cell(digit_img)
-      if digit_img_cropped is None:
-        continue
-
-      visit_count += 1
-      # use original image for this step as we want some room around
-      # the sample to allow some flexibility.
-      best_val, best_tag = find_tag(tagged_samples, digit_img)
-      if best_val is not None and best_val >= SAMPLE_THRESHOLD:
-        good_count += 1
-        continue
-
-      if best_val is None:
-        print(f'Found new sample with no good guesses.')
-      else:
-        print(f'Found new sample with best guess being {best_tag}, with score {best_val}')
-
-      nonce = str(uuid.uuid4())
-      fpath = os.path.join(store_path, f'UNTAGGED_{nonce}.png')
-      if dry_run:
-        print(f'(Dry run) Saving a sample shaped {digit_img_cropped.shape} to {fpath}...')
-      else:
-        print(f'Saving a sample shaped {digit_img_cropped.shape} to {fpath}...')
-        cv2.imwrite(fpath, digit_img_cropped)
-      store_quota -= 1
       if store_quota <= 0:
         break
+      print(f'Processing {fname} ...')
+      row_digits, col_digits = extract_digits(img, cell_bounds)
+      for digit_img in row_digits + col_digits:
+        digit_img_cropped = crop_digit_cell(digit_img)
+        if digit_img_cropped is None:
+          continue
+        visit_count += 1
+        # use original image for this step as we want some room around
+        # the sample to allow some flexibility.
+        best_val, best_tag = autotents.digits.manager.findTag(digit_img)
+        if best_val is not None and best_val >= autotents.common.SAMPLE_THRESHOLD:
+          good_count += 1
+          continue
+
+        nonce = str(uuid.uuid4())
+        if best_val is None:
+          print(f'Found new sample with no good guesses.')
+          fname = f'UNTAGGED_{nonce}.png'
+        else:
+          print(f'Found new sample with best guess being {best_tag}, with score {best_val}')
+          # attach the suspected tag here so it is more convenient when it is actually correct.
+          fname = f'UNTAGGED_{best_tag}_{nonce}.png'
+
+        fpath = os.path.join(store_path, fname)
+        if dry_run:
+          print(f'(Dry run) Saving a sample shaped {digit_img_cropped.shape} to {fpath}...')
+        else:
+          print(f'Saving a sample shaped {digit_img_cropped.shape} to {fpath}...')
+          cv2.imwrite(fpath, digit_img_cropped)
+        store_quota -= 1
+        if store_quota <= 0:
+          break
+
   print(f'Store quota is now {store_quota}.')
   print(f'Visited {visit_count} samples and {good_count} of them found good matches.')
 

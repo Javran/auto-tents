@@ -56,7 +56,7 @@ class Preset:
     return ret
 
   def findBoardSize(self, img, screen_dim):
-    h, w, _ = img.shape
+    h, w = screen_dim
     result = autotents.common.find_exact_color(img, autotents.common.COLOR_CELL_BLANK)
     mask = numpy.zeros((h+2,w+2), dtype=numpy.uint8)
     side_length_rev_map = self.buildSideLengthRevMap(screen_dim)
@@ -75,6 +75,13 @@ class Preset:
             return side_length_rev_map[rect_w]
           else:
             return None
+
+  def getCellBounds(self, size, screen_dim):
+    h, w = screen_dim
+    raw = self.data[f'{h}x{w}'][f'{size}x{size}']
+    row_bounds = list(map(lambda x: (x[0], x[1]), raw['row_bounds']))
+    col_bounds = list(map(lambda x: (x[0], x[1]), raw['col_bounds']))
+    return row_bounds, col_bounds
 
 
 preset = Preset()

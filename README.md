@@ -32,6 +32,7 @@ Here are few steps to have a working program, if my memory serves.
 
   We'll need to visit through those samples again
   in order to collect digit samples for recognition to work.
+  Tagging with `cd py; ./tagging.py`.
 
 - Have a working [tents-demo](https://github.com/Javran/puzzle-solving-collection/tree/master/tents-solver) binary.
 

@@ -22,6 +22,16 @@ COLOR_DIGIT_SAT = (0x97, 0xa7, 0xc8)  # a satisfied digit
 COLOR_TREE_SHADE = (0x55, 0xc8, 0x87)  # A sample color for tree shade.
 COLOR_CELL_BLANK = (0x31, 0x31, 0x34)  # Color of a blank cell.
 
+# We use CCOEFF here as we do want some penalty on mismatched bits
+# so that result is spreaded over a wider range so we have finer control using threshold.
+TM_METHOD = cv2.TM_CCOEFF_NORMED
+
+# threshold used for sampling, this is higher that threshold used for
+# recognition as we do want a wider range of samples.
+SAMPLE_THRESHOLD = 0.9
+# threshold used for recognition.
+# a matching result lower than this is considered not confident and may be incorrect.
+RECOG_THRESHOLD = 0.85
 
 
 def private_path(*p):
@@ -48,3 +58,25 @@ def load_sample(size,screen_dim=PRESET_SCREEN_DIM):
 def find_exact_color(img, color):
   """Calls cv2.inRange restricting to an exact color value."""
   return cv2.inRange(img, color, color)
+
+
+def rescale_and_match(img, templ_in, tm_method):
+  (_,_,w,h) = cv2.boundingRect(img)
+  if w == 0 or h == 0:
+    return None
+  else:
+    # try to rescale pattern to match image width (of the bounding rect)
+    # we are targeting width here because we can prevent one digit pattern
+    # to match with multiple digit ones this way.
+    # also because digits tend to vary more in horizontal direction
+    # so we are actually eliminating lots of candidates this way.
+    templ_in_h, templ_in_w = templ_in.shape
+    scale = w / templ_in_w
+    templ_h = round(templ_in_h * w / templ_in_w)
+    if templ_h > h:
+      return None
+    templ = cv2.resize(templ_in, (w, templ_h), cv2.INTER_AREA)
+
+  result = cv2.matchTemplate(img, templ, tm_method)
+  _, max_val, _, _ = cv2.minMaxLoc(result)
+  return max_val
