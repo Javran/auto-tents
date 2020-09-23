@@ -2,6 +2,7 @@
 
 import collections
 import json
+import multiprocessing
 
 import cv2
 import numpy
@@ -105,6 +106,17 @@ def find_cell_bounds(img, size=None):
   return row_bounds, col_bounds
 
 
+def _generate_preset_for_size(size):
+  img = autotents.common.load_sample(size)
+  cell_bounds = find_cell_bounds(img, size)
+  row_bounds, col_bounds = cell_bounds
+  bound_info =  {
+    'row_bounds': row_bounds,
+    'col_bounds': col_bounds,
+  }
+  return f'{size}x{size}', bound_info
+
+
 # Given that most of the processing time is spent on doing floodFill to figure out cell bounds,
 # it makes sense that we have this info pre-processed. In order to achieve so, we must extract size of the board.
 # Note that despite regular puzzle shows size info (size x size), daily puzzles do not.
@@ -120,16 +132,9 @@ def main_generate_preset():
   #   "2880x1440": {"16x16": {"row_bounds": [[a,b], [c,d], ...], "col_bounds": [[a,b], [c,d], ...]}}
   # }
   h, w = autotents.common.PRESET_SCREEN_DIM
-  cell_bounds_mapping = {}
-  for size in autotents.common.PUZZLE_SIZES:
-    print(f'Processing {size}x{size} ...')
-    img = autotents.common.load_sample(size)
-    cell_bounds = find_cell_bounds(img, size)
-    row_bounds, col_bounds = cell_bounds
-    cell_bounds_mapping[f'{size}x{size}'] = {
-      'row_bounds': row_bounds,
-      'col_bounds': col_bounds,
-    }
+  print('Processing samples in parallel ...')
+  with multiprocessing.Pool() as p:
+    cell_bounds_mapping = dict(p.map(_generate_preset_for_size, autotents.common.PUZZLE_SIZES))
   full = {f'{h}x{w}': cell_bounds_mapping}
   print(json.dumps(full,sort_keys=True,separators=(',', ':')))
 
