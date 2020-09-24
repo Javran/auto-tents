@@ -39,3 +39,6 @@ Here are few steps to have a working program, if my memory serves.
 - Set environment variable `TENTS_DEMO_BIN` to the location of the binary. `cd py/` then `./solver.py` when the phone is at a game screen.
 
 - (Optional) Set environment variable `PUZZLE_RECORDS` to a file path to append recognized puzzles to it.
+
+- `cd py/; ./analyze_samples.py` can used to gather some analysis,
+  this is mostly just for experimenting with threshold methods.
