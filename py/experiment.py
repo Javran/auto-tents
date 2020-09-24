@@ -22,18 +22,6 @@ import time
 import random
 import autotents.common
 
-color_unsat = (0x41, 0x4e, 0x7e)  # B,G,R
-color_sat = (0x97, 0xa7, 0xc8)
-color_shade = (0x55, 0xc8, 0x87)
-# This is the exact color that game uses for blank cells.
-color_blank = (49, 49, 52)
-
-store_path = '../private/digits'
-preset_path = '../private/preset.json'
-
-def load_sample(size):
-  return cv2.imread(f'../private/sample-{size}x{size}.png')
-
 
 def find_and_mark_matches(img, result, pat_dims, threshold):
   """Find and mark matching places given a result of matchTemplate.
@@ -128,17 +116,6 @@ def main_all_samples():
     print(f'{i}: {target_width}')
 
 
-
-
-
-def crop_digit_cell(img):
-  result = cv2.inRange(img, color_unsat, color_unsat)
-  (x,y,w,h) = cv2.boundingRect(result)
-  if w == 0 or h == 0:
-    return None
-  return result[y:y+h,x:x+w]
-
-
 def main_experiment():
   size = 22
   img = load_sample(size)
@@ -227,102 +204,6 @@ def main_experiment():
     subplot_gray(223, digits, 'digits')
     subplot_gray(224, cell_results_recombined, 'find tree')
     pyplot.show()
-
-
-SAMPLE_FILENAME_PATTEN = re.compile(r'^([^_]+)_.*.png$')
-
-
-def load_samples():
-  """Returns a dict from tag to a list of images."""
-
-  if not os.path.exists(store_path):
-    os.makedirs(store_path)
-    return {}
-
-  d = collections.defaultdict(list)
-  untagged_count = 0
-
-  for filename in os.listdir(store_path):
-    result = SAMPLE_FILENAME_PATTEN.match(filename)
-    if result is None:
-      continue
-    tag = result.group(1)
-    if tag == 'UNTAGGED':
-      untagged_count += 1
-      continue
-    d[tag].append(cv2.imread(os.path.join(store_path, filename),cv2.IMREAD_GRAYSCALE))
-
-  if untagged_count:
-    print(f'There are {untagged_count} untagged samples.')
-  return d
-
-
-def find_tag(tagged_samples, img_pre):
-  img = cv2.inRange(img_pre, color_unsat, color_unsat)
-  best_val, best_tag = None, None
-  for tag, samples in tagged_samples.items():
-    for pat in samples:
-      val = rescale_and_match(img,pat,tm_method)
-      if val is None:
-        continue
-      if best_val is None or best_val < val:
-        best_val, best_tag = val, tag
-  return best_val, best_tag
-
-
-def main_tagging(dry_run=True):
-  # the idea of this function is to turn this program into an iterative loop to
-  # gradually tag sample images with digits, recognized from boards of various sizes.
-
-  tagged_samples = load_samples()
-  sample_count = functools.reduce(lambda acc, l: acc + len(l), tagged_samples.values(), 0)
-  print(f'Loaded {len(tagged_samples)} tags, {sample_count} tagged samples in total.')
-
-  # limit the # of samples stored to disk per execution.
-  # for now this is effectively not doing anything but we want to avoid
-  # running into a situation that saves too many files at once.
-  store_quota = 100
-  visit_count = 0
-  good_count = 0
-
-  for size in range(6,22+1):
-    if store_quota <= 0:
-      break
-    print(f'Processing image sample of size {size} ...')
-    img = load_sample(size)
-    h, w, _ = img.shape
-    cell_bounds = find_cell_bounds(img, size)
-    row_digits, col_digits = extract_digits(img, cell_bounds)
-    for digit_img in row_digits + col_digits:
-      digit_img_cropped = crop_digit_cell(digit_img)
-      if digit_img_cropped is None:
-        continue
-
-      visit_count += 1
-      # use original image for this step as we want some room around
-      # the sample to allow some flexibility.
-      best_val, best_tag = find_tag(tagged_samples, digit_img)
-      if best_val is not None and best_val >= SAMPLE_THRESHOLD:
-        good_count += 1
-        continue
-
-      if best_val is None:
-        print(f'Found new sample with no good guesses.')
-      else:
-        print(f'Found new sample with best guess being {best_tag}, with score {best_val}')
-
-      nonce = str(uuid.uuid4())
-      fpath = os.path.join(store_path, f'UNTAGGED_{nonce}.png')
-      if dry_run:
-        print(f'(Dry run) Saving a sample shaped {digit_img_cropped.shape} to {fpath}...')
-      else:
-        print(f'Saving a sample shaped {digit_img_cropped.shape} to {fpath}...')
-        cv2.imwrite(fpath, digit_img_cropped)
-      store_quota -= 1
-      if store_quota <= 0:
-        break
-  print(f'Store quota is now {store_quota}.')
-  print(f'Visited {visit_count} samples and {good_count} of them found good matches.')
 
 
 # Here we focus on two numbers:
