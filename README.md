@@ -37,3 +37,5 @@ Here are few steps to have a working program, if my memory serves.
 - Have a working [tents-demo](https://github.com/Javran/puzzle-solving-collection/tree/master/tents-solver) binary.
 
 - Set environment variable `TENTS_DEMO_BIN` to the location of the binary. `cd py/` then `./solver.py` when the phone is at a game screen.
+
+- (Optional) Set environment variable `PUZZLE_RECORDS` to a file path to append recognized puzzles to it.

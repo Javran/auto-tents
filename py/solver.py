@@ -126,6 +126,15 @@ def main_recognize_and_solve_board():
   for l in input_lines:
     print(l)
   print('# PUZZLE OUTPUT END')
+
+  if 'PUZZLE_RECORDS' in os.environ:
+    puzzle_file = os.environ['PUZZLE_RECORDS']
+    with open(puzzle_file, 'a') as f:
+      print('####', file=f)
+      for l in input_lines:
+        print(l, file=f)
+    print(f'Recorded to {puzzle_file}.')
+
   plot = False
   if plot:
     pyplot.figure().canvas.set_window_title('@dev')
@@ -164,6 +173,7 @@ def main_recognize_and_solve_board():
   # wait for all tapping actions to return.
   for p in procs:
     p.wait()
+
 
 if __name__ == '__main__':
   main_recognize_and_solve_board()
