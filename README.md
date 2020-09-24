@@ -16,7 +16,7 @@ Here are few steps to have a working program, if my memory serves.
   Each different puzzle size needs one.
   Collect and store them under `private/samples/{h}x{w}/`,
   where `h` is the screen height of the phone and `w` screen width.
-  The naming pattern is `sample-{x}-{x}.png` where `{x}` is
+  The naming pattern is `sample-{size}x{size}.png` where `{size}` is
   the size of the puzzle (a number from `5` to `22`).
 
   To take phone screenshots, use `adb exec-out screencap -p > sample-{size}x{size}.png`.
