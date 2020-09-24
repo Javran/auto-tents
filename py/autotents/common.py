@@ -26,6 +26,13 @@ COLOR_CELL_BLANK = (0x31, 0x31, 0x34)  # Color of a blank cell.
 # so that result is spreaded over a wider range so we have finer control using threshold.
 TM_METHOD = cv2.TM_CCOEFF_NORMED
 
+# TODO: instead of those thresholds, another way that might worth exploring
+# is to gather all tags that has a good score, and see if there are any wrong tags
+# and if so, how far away are they from the chosen tag.
+# if, say a correct tag gets 0.95 matching score and a wrong tag gets 0.93,
+# this might be an indication that we'll need to record the image we are matching
+# as a sample to distinguish between two tags.
+
 # threshold used for sampling, this is higher that threshold used for
 # recognition as we do want a wider range of samples.
 SAMPLE_THRESHOLD = 0.9
