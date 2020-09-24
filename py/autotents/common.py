@@ -87,3 +87,40 @@ def rescale_and_match(img, templ_in, tm_method):
   result = cv2.matchTemplate(img, templ, tm_method)
   _, max_val, _, _ = cv2.minMaxLoc(result)
   return max_val
+
+
+def extract_digits(img, cell_bounds):
+  h, w, _ = img.shape
+  row_bounds, col_bounds = cell_bounds
+  max_cell_side = max(map(lambda x: x[1] - x[0] + 1, row_bounds + col_bounds))
+  def extract_digit(row,col):
+    return img[row:row+max_cell_side-1,col:col+max_cell_side-1]
+
+  # Suppose first two cells are A and B, we can then find a cell C if we extend
+  # difference between A and B but in the other direction.
+  # A - (B - A) = 2A - B
+
+  digit_row_start = 2 * row_bounds[0][0] - row_bounds[1][0]
+  # col could be negative for 5x5 case.
+  digit_col_start = max(0, 2 * col_bounds[0][0] - col_bounds[1][0])
+
+  # digits accompanying every row.
+  row_digits = [
+    extract_digit(row_lo,digit_col_start)
+    for row_lo, _ in row_bounds
+  ]
+  # same but for columns
+  col_digits = [
+    extract_digit(digit_row_start,col_lo)
+    for col_lo, _ in col_bounds
+  ]
+  return row_digits, col_digits
+
+
+def crop_digit_cell(img):
+  result = find_exact_color(img, COLOR_DIGIT_UNSAT)
+  (x,y,w,h) = cv2.boundingRect(result)
+  if w == 0 or h == 0:
+    return None
+  return result[y:y+h,x:x+w]
+
