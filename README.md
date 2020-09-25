@@ -34,6 +34,10 @@ Here are few steps to have a working program, if my memory serves.
   in order to collect digit samples for recognition to work.
   Tagging with `cd py; ./tagging.py`.
 
+  For the tagging process, it is recommended that you tag at most one sample for each digit at one iteration,
+  this allows us to get a smaller set of samples (untagged samples will be removed if next time
+  it can be recognized (by newly added samples) with a good score.
+
 - Have a working [tents-demo](https://github.com/Javran/puzzle-solving-collection/tree/master/tents-solver) binary.
 
 - Set environment variable `TENTS_DEMO_BIN` to the location of the binary. `cd py/` then `./solver.py` when the phone is at a game screen.

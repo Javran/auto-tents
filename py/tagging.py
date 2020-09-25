@@ -70,6 +70,7 @@ def main_tagging(dry_run=True):
   if not os.path.exists(store_path):
     os.makedirs(store_path)
 
+  autotents.digits.manager.cleanUpUntagged()
   for size, samples in get_all_samples(screen_dim):
     if store_quota <= 0:
       break
