@@ -100,10 +100,14 @@ def main_recognize_and_solve_board():
         continue
       # use original image for this step as we want some room around
       # the sample to allow some flexibility.
-      best_val, best_tag = autotents.digits.manager.findTag(digit_img)
+      best_val, best_tag, competing_factor = autotents.digits.manager.findTag(digit_img)
       if best_val is None or best_val < autotents.common.RECOG_THRESHOLD:
         confident = False
         print(f'Warning: best_val is only {best_val}, the recognized digit might be incorrect.')
+      if competing_factor is not None:
+        confident = False
+        print(f'Warning: found a competing factor of {competing_factor}, proceed to sampling.')
+      if not confident:
         nonce = str(uuid.uuid4())
         if best_val is None:
           fname = f'UNTAGGED_{nonce}.png'

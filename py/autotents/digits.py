@@ -35,20 +35,36 @@ class SampleManager:
         untagged_count += 1
         continue
       self.data[tag].append(cv2.imread(os.path.join(store_path, filename),cv2.IMREAD_GRAYSCALE))
-
     if untagged_count:
       print(f'There are {untagged_count} untagged samples.')
 
   def findTagGray(self, img, tm_method=autotents.common.TM_METHOD):
-    best_val, best_tag = None, None
+    # first round: collect pairs that are better than a threshold.
+    good_values = []
     for tag, samples in self.data.items():
       for pat in samples:
         val = autotents.common.rescale_and_match(img,pat,tm_method)
-        if val is None:
+        if val is None or val < autotents.common.RECOG_THRESHOLD:
           continue
-        if best_val is None or best_val < val:
-          best_val, best_tag = val, tag
-    return best_val, best_tag
+        good_values.append((val, tag))
+    if not len(good_values):
+      return None, None, None
+    good_values = sorted(good_values, key=lambda x: x[0], reverse=True)
+    best_val, best_tag = good_values[0]
+    # find tags that are considered good by threshold but does not actually match
+    # with the best tag, those are "competitors" that could potentially lead to inaccurate results.
+    competitors = [p for p in filter(lambda p: p[1] != best_tag, good_values)]
+    if not len(competitors):
+      competing_factor = None
+    else:
+      # the competing factor measures "the best wrong match", the lower this value gets,
+      # the more likely that we get a wrong result.
+      # for now we haven't find cases where this value is not None, so
+      # we always treat cases that this is not None as an alerting result and try to sample it if possible.
+      print(f't: {best_tag}, {best_val} competitiors: {competitors}')
+      competing_factor = best_val - competitors[0][0]
+      assert competing_factor > 0
+    return best_val, best_tag, competing_factor
 
   def findTag(self, img_pre, tm_method=autotents.common.TM_METHOD):
     img = autotents.common.find_exact_color(img_pre, autotents.common.COLOR_DIGIT_UNSAT)
@@ -74,8 +90,8 @@ class SampleManager:
         borderType=cv2.BORDER_CONSTANT,
         value=0)
 
-      best_val, best_tag = self.findTagGray(img, autotents.common.TM_METHOD)
-      if best_val is not None and best_val >= autotents.common.SAMPLE_THRESHOLD:
+      best_val, best_tag, competing_factor = self.findTagGray(img, autotents.common.TM_METHOD)
+      if best_val is not None and best_val >= autotents.common.RECOG_THRESHOLD and competing_factor is None:
         print(f'Removing {filename} as it achieves {best_val} with tag {best_tag} ...')
         os.remove(full_file_path)
 

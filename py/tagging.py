@@ -70,6 +70,7 @@ def main_tagging(dry_run=True):
   if not os.path.exists(store_path):
     os.makedirs(store_path)
 
+  min_competing_factor = None
   autotents.digits.manager.cleanUpUntagged()
   for size, samples in get_all_samples(screen_dim):
     if store_quota <= 0:
@@ -88,10 +89,17 @@ def main_tagging(dry_run=True):
         visit_count += 1
         # use original image for this step as we want some room around
         # the sample to allow some flexibility.
-        best_val, best_tag = autotents.digits.manager.findTag(digit_img)
-        if best_val is not None and best_val >= autotents.common.SAMPLE_THRESHOLD:
-          good_count += 1
-          continue
+        best_val, best_tag, competing_factor = autotents.digits.manager.findTag(digit_img)
+        if competing_factor is not None and (
+            min_competing_factor is None or min_competing_factor > competing_factor
+        ):
+          min_competing_factor = competing_factor
+        if best_val is not None and best_val >= autotents.common.RECOG_THRESHOLD:
+          if competing_factor is None:
+            good_count += 1
+            continue
+          else:
+            print(f'Found a completing factor of {competing_factor}, proceed to sampling.')
 
         nonce = str(uuid.uuid4())
         if best_val is None:
@@ -114,6 +122,7 @@ def main_tagging(dry_run=True):
 
   print(f'Store quota is now {store_quota}.')
   print(f'Visited {visit_count} samples and {good_count} of them found good matches.')
+  print(f'Min competing factor is {min_competing_factor}')
 
 
 if __name__ == '__main__':
