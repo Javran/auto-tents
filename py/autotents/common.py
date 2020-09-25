@@ -118,6 +118,12 @@ def extract_digits(img, cell_bounds):
 
 
 def crop_digit_cell(img):
+  """Crop a digit sample into 2-color and compact shape.
+
+  This usually done to prepare a sample digit for storage.
+  Resulting image (if any) contains at most two colors:
+  0 for black and 255 for white.
+  """
   result = find_exact_color(img, COLOR_DIGIT_UNSAT)
   (x,y,w,h) = cv2.boundingRect(result)
   if w == 0 or h == 0:

@@ -6,6 +6,7 @@ import random
 import subprocess
 import tempfile
 import time
+import uuid
 
 import cv2
 import numpy
@@ -92,27 +93,30 @@ def main_recognize_and_solve_board():
       ('Row', row_digits, recog_row_digits),
       ('Col', col_digits, recog_col_digits),
   ]:
-    # print(f'{desc} info:')
     for i, digit_img in enumerate(ds):
       digit_img_cropped = autotents.common.crop_digit_cell(digit_img)
       if digit_img_cropped is None:
         ds_out[i] = '0'
-        # print('-')
         continue
       # use original image for this step as we want some room around
       # the sample to allow some flexibility.
       best_val, best_tag = autotents.digits.manager.findTag(digit_img)
-      if best_val < autotents.common.RECOG_THRESHOLD:
+      if best_val is None or best_val < autotents.common.RECOG_THRESHOLD:
         confident = False
         print(f'Warning: best_val is only {best_val}, the recognized digit might be incorrect.')
+        nonce = str(uuid.uuid4())
+        if best_val is None:
+          fname = f'UNTAGGED_{nonce}.png'
+        else:
+          print(f'Found new sample with best guess being {best_tag}, with score {best_val}')
+          # attach the suspected tag here so it is more convenient when it is actually correct.
+          fname = f'UNTAGGED_{best_tag}_{nonce}.png'
+        store_path = autotents.common.private_path('digits')
+        fpath = os.path.join(store_path, fname)
+        print(f'Saving a sample shaped {digit_img_cropped.shape} to {fpath}...')
+        cv2.imwrite(fpath, digit_img_cropped)
 
       ds_out[i] = best_tag
-
-      # TOOD: turn this into UNTAGGED if best_val is too low,
-      # we can also do "UNTAGGED_<x>_<whatever id>.png"
-      # where "<x>" is the best tag we have.
-      # this makes it easier to rename if the best guess is actually correct.
-      # print(best_tag, best_val)
 
   # Recognition is done, build up input to tents-demo
   input_lines = []
