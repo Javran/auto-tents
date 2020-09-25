@@ -7,7 +7,6 @@ import cv2
 
 # This should point to a directory that stores assets not meant for source version control.
 # If you want to change to a different directory, this should be the only variable you need to change.
-# TODO: the last sentence is a lie, make sure it is not in the future.
 PRIVATE_BASE = '../private'
 
 # (height, width) of the screen that we are building preset against.
