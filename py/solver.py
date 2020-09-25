@@ -87,6 +87,7 @@ def main_recognize_and_solve_board():
   recog_row_digits = [ None for _ in range(size) ]
   recog_col_digits = [ None for _ in range(size) ]
 
+  confident = True
   for desc, ds, ds_out in [
       ('Row', row_digits, recog_row_digits),
       ('Col', col_digits, recog_col_digits),
@@ -102,6 +103,7 @@ def main_recognize_and_solve_board():
       # the sample to allow some flexibility.
       best_val, best_tag = autotents.digits.manager.findTag(digit_img)
       if best_val < autotents.common.RECOG_THRESHOLD:
+        confident = False
         print(f'Warning: best_val is only {best_val}, the recognized digit might be incorrect.')
 
       ds_out[i] = best_tag
@@ -127,7 +129,7 @@ def main_recognize_and_solve_board():
     print(l)
   print('# PUZZLE OUTPUT END')
 
-  if 'PUZZLE_RECORDS' in os.environ:
+  if confident and 'PUZZLE_RECORDS' in os.environ:
     puzzle_file = os.environ['PUZZLE_RECORDS']
     with open(puzzle_file, 'a') as f:
       print('####', file=f)
