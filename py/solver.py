@@ -94,6 +94,7 @@ def main_recognize_and_solve_board():
       ('Col', col_digits, recog_col_digits),
   ]:
     for i, digit_img in enumerate(ds):
+      need_to_save = False
       digit_img_cropped = autotents.common.crop_digit_cell(digit_img)
       if digit_img_cropped is None:
         ds_out[i] = '0'
@@ -103,11 +104,13 @@ def main_recognize_and_solve_board():
       best_val, best_tag, competing_factor = autotents.digits.manager.findTag(digit_img)
       if best_val is None or best_val < autotents.common.RECOG_THRESHOLD:
         confident = False
+        need_to_save = True
         print(f'Warning: best_val is only {best_val}, the recognized digit might be incorrect.')
       if competing_factor is not None:
         confident = False
+        need_to_save = True
         print(f'Warning: found a competing factor of {competing_factor}, proceed to sampling.')
-      if not confident:
+      if need_to_save:
         nonce = str(uuid.uuid4())
         if best_val is None:
           fname = f'UNTAGGED_{nonce}.png'
@@ -121,7 +124,7 @@ def main_recognize_and_solve_board():
         cv2.imwrite(fpath, digit_img_cropped)
 
       ds_out[i] = best_tag
-
+  assert confident, 'Solving process stopped as recognition might be inaccurate.'
   # Recognition is done, build up input to tents-demo
   input_lines = []
   def out(line):
