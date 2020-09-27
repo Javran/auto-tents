@@ -147,7 +147,7 @@ def main_recognize_and_solve_board():
       for l in input_lines:
         print(l, file=f)
     print(f'Recorded to {puzzle_file}.')
-
+  skip_solving = False
   plot = False
   if plot:
     pyplot.figure().canvas.set_window_title('@dev')
@@ -156,6 +156,8 @@ def main_recognize_and_solve_board():
     subplot_color(223, digits, 'digits')
     subplot_gray(224, cell_results_recombined, 'find tree')
     pyplot.show()
+  if skip_solving:
+    return
   proc_result = subprocess.run(
     [tents_demo_bin, 'stdin'],
     input='\n'.join(input_lines) + '\n',
