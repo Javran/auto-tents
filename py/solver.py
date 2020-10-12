@@ -4,12 +4,14 @@ import json
 import os
 import random
 import subprocess
+import sys
 import tempfile
 import time
 import uuid
 
 import cv2
 import numpy
+import input_agent_client
 
 import autotents.common
 import autotents.digits
@@ -23,21 +25,24 @@ def get_tents_demo_bin():
   return tents_demo_bin
 
 
-def load_realtime_screenshot():
-  # Get a screenshot using adb and read it into OpenCV object.
-  fp_img = tempfile.NamedTemporaryFile(delete=False,suffix='.png')
-  subprocess.run(['adb', 'exec-out', 'screencap', '-p'], stdout=fp_img)
-  fp_img.close()
-  img = cv2.imread(fp_img.name)
-  os.remove(fp_img.name)
+def load_realtime_screenshot(aia_client):
+  img_data = aia_client.commandScreenshotAll()
+  img_np = numpy.frombuffer(img_data, dtype=numpy.uint8)
+  img = cv2.imdecode(img_np, cv2.IMREAD_COLOR)
   return img
-
 
 def main_recognize_and_solve_board():
   tents_demo_bin = get_tents_demo_bin()
   print(f'tents-demo: {tents_demo_bin}')
+
+  if 'AIA_PORT' not in os.environ:
+    print('AIA_PORT is not set.')
+    sys.exit(1)
+
+  aia_client = input_agent_client.InputAgentClient(int(os.environ['AIA_PORT']))
+
   # take screenshot
-  img = load_realtime_screenshot()
+  img = load_realtime_screenshot(aia_client)
   h, w, _ = img.shape
   # pick preset and determine screen_dim and size.
   screen_dim = (h, w)
@@ -171,23 +176,21 @@ def main_recognize_and_solve_board():
   tent_positions = list(map(parse_raw, raw_tent_positions))
   print(f'Received {len(tent_positions)} tent positions.')
   # puzzle is solved, build up plan to tap cells as necessary
-  procs = []
+
   def tap(r,c):
     row_lo, row_hi = row_bounds[r]
     row_pos = round((row_lo + row_hi) / 2)
     col_lo, col_hi = col_bounds[c]
     col_pos = round((col_lo + col_hi) / 2)
-    procs.append(subprocess.Popen(['adb', 'exec-out', 'input', 'tap', str(col_pos), str(row_pos)]))
+    coord = (col_pos, row_pos)
+    aia_client.commandTap(coord)
 
   solving_moves = [ d for pos in tent_positions for d in [pos, pos] ]
   # shuffling doesn't actually do much, but looks a bit fancier.
   random.shuffle(solving_moves)
   for (r,c) in solving_moves:
     tap(r,c)
-    time.sleep(0.2)
-  # wait for all tapping actions to return.
-  for p in procs:
-    p.wait()
+    time.sleep(0.02)
 
 
 if __name__ == '__main__':

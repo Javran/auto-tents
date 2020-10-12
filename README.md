@@ -8,6 +8,7 @@ Requirement:
 - opencv-python and python 3.7. I have no idea nor do I care why it only works on 3.7.
 - adb, we will do screenshots and issue taps using it.
 - a compiled binary of [tents-demo](https://github.com/Javran/puzzle-solving-collection/tree/master/tents-solver).
+- [android_input_agent](https://github.com/Javran/android_input_agent)
 
 Here are few steps to have a working program, if my memory serves.
 
@@ -40,7 +41,13 @@ Here are few steps to have a working program, if my memory serves.
 
 - Have a working [tents-demo](https://github.com/Javran/puzzle-solving-collection/tree/master/tents-solver) binary.
 
-- Set environment variable `TENTS_DEMO_BIN` to the location of the binary. `cd py/` then `./solver.py` when the phone is at a game screen.
+- Set `PYTHONPATH` so that it points to a local copy of `android_input_agent`'s [client](https://github.com/Javran/android_input_agent/tree/master/clients/py3)
+
+- Set environment variable `TENTS_DEMO_BIN` to the location of the binary.
+
+- Set environment variable `AIA_PORT`, which should point to a running server of `android_input_agent`.
+
+- `cd py/` then `./solver.py` when the phone is at a game screen.
 
 - (Optional) Set environment variable `PUZZLE_RECORDS` to a file path to append recognized puzzles to it.
 
